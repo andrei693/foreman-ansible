@@ -10,7 +10,7 @@ import yaml
 
 username = 'user'
 password = 'password'
-foreman_url = "https://your.foreman.server.com/hosts"
+foreman_url = "https://foreman.example.com/api/hosts"
 
 # Read in the yaml groups file
 f = open('groups.yml')
@@ -37,7 +37,7 @@ if len(sys.argv) == 2 and (sys.argv[1] == '--list'):
 
 	# Search for each of the group/filters
 	for groupname, groupinfo in groups.iteritems():
-		hosts = get_hosts(groupinfo['hostfilter'])
+		hosts = [host[u'host'][u'name'] for host in get_hosts(groupinfo['hostfilter'])]
 		data[groupname] = {'hosts': hosts}
 		if "vars" in groupinfo:
 			data[groupname].update({'vars': groupinfo['vars']})
