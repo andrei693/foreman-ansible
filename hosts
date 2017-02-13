@@ -3,14 +3,16 @@
 # ToDo:
 # * read in children groups from the yaml file as well.
 
-import requests
 import sys
 import json
+import getpass
+import requests
 import yaml
 
-username = 'user'
-password = 'password'
-foreman_url = "https://foreman.example.com/api/hosts"
+username = input("Foreman Username: ")
+password = getpass.getpass("Your Foreman password: ")
+foreman_url = "https://foreman.server.tld/api/hosts"
+
 
 # Read in the yaml groups file
 f = open('groups.yml')
@@ -26,36 +28,39 @@ s.verify = False
 #print s.url
 
 def get_hosts(hostfilter):
-	payload = {'search': hostfilter + ' ', 'format': 'json', }
-	r = s.get(foreman_url, params=payload)
-	return r.json()
+    payload = {'search': hostfilter + ' ', 'format': 'json', }
+    r = s.get(foreman_url, params=payload)
+    return r.json()
 
 if len(sys.argv) == 2 and (sys.argv[1] == '--list'):
-	
-	# Create an empty dict to hold the results
-	data = {}
 
-	# Search for each of the group/filters
-	for groupname, groupinfo in groups.iteritems():
-		hosts = [host[u'host'][u'name'] for host in get_hosts(groupinfo['hostfilter'])]
-		data[groupname] = {'hosts': hosts}
-		if "vars" in groupinfo:
-			data[groupname].update({'vars': groupinfo['vars']})
+    # Create an empty dict to hold the results
+    data = {}
 
-	print json.dumps(data, indent=2)
+    # Search for each of the group/filters
+    for groupname, groupinfo in groups.items():
+        hosts = [host['name'] for host in get_hosts(groupinfo['hostfilter'])['results']]
+        data[groupname] = {'hosts': hosts}
+        if "vars" in groupinfo:
+            data[groupname].update({'vars': groupinfo['vars']})
 
-	sys.exit(0)
+    for env in data:
+        print("["+env+"]")
+        for host in data[env]['hosts']:
+            print(host)
+
+    sys.exit(0)
 
 elif len(sys.argv) == 3 and (sys.argv[1] == '--host'):
 
-	hostname = sys.argv[2]
-	payload = {'format': 'json'}
-	r = s.get(foreman_url + "/" +  hostname + "/" + "facts", params=payload)
-	facts = r.json()
-	print json.dumps(facts[hostname], indent=2)
-        
-	sys.exit(0)
+    hostname = sys.argv[2]
+    payload = {'format': 'json'}
+    r = s.get(foreman_url + "/" +  hostname + "/" + "facts", params=payload)
+    facts = r.json()
+    print(json.dumps(facts[hostname], indent=2))
+
+    sys.exit(0)
 
 else:
-	print "usage: --list  ..OR.. --host <hostname>"
-	sys.exit(1)
+    print("usage: --list  ..OR.. --host <hostname>")
+    sys.exit(1)
